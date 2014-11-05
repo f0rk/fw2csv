@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+import os
+import re
+import csv
+import sys
+import argparse
+
+
+class Converter(object):
+
+    def __init__(self, cuts_path):
+        self.cuts = []
+        with open(cuts_path, "r") as cfp:
+            for line in cfp:
+                line = line.strip()
+                name, cut = re.split(r'\s+', line)
+                self.cuts.append((name, int(cut)))
+
+    @property
+    def fields(self):
+        return [v[0] for v in self.cuts]
+
+    def parse(self, fp):
+        if fp == "-":
+            fp = sys.stdin
+        elif isinstance(fp, basestring):
+            fp = open(fp, "r")
+        elif isinstance(fp, int):
+            fp = os.fdopen(fp, "r")
+
+        for line in fp:
+            yield self.split(line)
+
+    def split(self, line):
+        values = []
+        start = 0
+        for _, end in self.cuts:
+            values.append(line[start:end].strip())
+            start = end
+
+        return values
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("cuts", help="path to the cuts file")
+    parser.add_argument("files", nargs="*", help="files to process")
+
+    args = parser.parse_args()
+
+    if not args.files:
+        args.files = ["-"]
+
+    converter = Converter(args.cuts)
+    writer = csv.writer(sys.stdout)
+    writer.writerow(converter.fields)
+    for file in args.files:
+        for rec in converter.parse(file):
+            writer.writerow(rec)
+
