@@ -49,9 +49,6 @@ class Converter(object):
 
 
 if __name__ == "__main__":
-
-    sys.excepthook = lambda *args: None
-
     parser = argparse.ArgumentParser()
     parser.add_argument("cuts", help="path to the cuts file")
     parser.add_argument("files", nargs="*", help="files to process")
