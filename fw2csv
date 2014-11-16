@@ -4,6 +4,7 @@ import os
 import re
 import csv
 import sys
+import signal
 import argparse
 
 
@@ -49,6 +50,10 @@ class Converter(object):
 
 
 if __name__ == "__main__":
+
+    # ignore pipe errors using head, etc
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL) 
+
     parser = argparse.ArgumentParser()
     parser.add_argument("cuts", help="path to the cuts file")
     parser.add_argument("files", nargs="*", help="files to process")
