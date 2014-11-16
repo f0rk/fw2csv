@@ -14,8 +14,11 @@ class Converter(object):
         with open(cuts_path, "r") as cfp:
             for line in cfp:
                 line = line.strip()
-                name, cut = re.split(r'\s+', line)
-                self.cuts.append((name, int(cut)))
+                try:
+                    name, cut = re.split(r'\s+', line)
+                    self.cuts.append((name, int(cut)))
+                except TypeError:
+                    self.cuts.append((line, None))
 
     @property
     def fields(self):
@@ -36,13 +39,19 @@ class Converter(object):
         values = []
         start = 0
         for _, end in self.cuts:
-            values.append(line[start:end].strip())
+            if end is None:
+                values.append(line[start:].strip())
+            else:
+                values.append(line[start:end].strip())
             start = end
 
         return values
 
 
 if __name__ == "__main__":
+
+    sys.excepthook = lambda *args: None
+
     parser = argparse.ArgumentParser()
     parser.add_argument("cuts", help="path to the cuts file")
     parser.add_argument("files", nargs="*", help="files to process")
