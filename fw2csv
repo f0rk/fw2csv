@@ -20,6 +20,8 @@ class Converter(object):
                     self.cuts.append((name, int(cut)))
                 except TypeError:
                     self.cuts.append((line, None))
+                except ValueError:
+                    self.cuts.append((line, None))
 
     @property
     def fields(self):
