@@ -8,6 +8,9 @@ import signal
 import argparse
 
 
+# without this, we may encounter fields larger than can be read
+csv.field_size_limit(sys.maxsize)
+
 class Converter(object):
 
     def __init__(self, cuts_path):
