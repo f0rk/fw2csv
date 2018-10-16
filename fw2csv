@@ -64,23 +64,11 @@ class Converter(object):
         self.cuts = []
         with open(cuts_path, "r") as cfp:
 
-            lines = list(cfp.readlines())
-
-            # magically detect if the cuts file is a csv or a text file
-            is_csv = True
-
-            for line in lines:
-                parts = line.split(",")
-                if len(parts) <= 1:
-                    is_csv = False
-
-            if is_csv:
+            if cuts_path.endswith(".csv"):
 
                 name_key = None
                 end_key = None
                 format_key = None
-
-                cfp.seek(0)
 
                 reader = csv.DictReader(cfp)
 
