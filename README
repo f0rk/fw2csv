@@ -2,7 +2,8 @@ Convert fixed-width files to csv files.
 
 Call fw2csv with -h for help.
 
-Requires python.
+Requires python and the overpunch package if using data that is in the signed
+overpunch format.
 
 
 The first argument is expected to be a file which defines the field name and
@@ -15,6 +16,16 @@ derp  20
 
 Would specify a file where the first field "foo" is positions 1-4, "bar" is
 5-8, etc.
+
+Alternatively, the file may be a CSV file:
+name,end,format
+foo,4,X(10)
+bar,8,
+herp,12,
+derp,s9(4)v9(4)
+
+The general format for signed overpunch is s9(\d+)v9(\d+) and for implicit
+decimal points is 9(\d+)v9(\d+). All other data is passed through as is.
 
 After that, it takes 0 or more arguments of files to process. If not files or -
 is given, standard in is read.

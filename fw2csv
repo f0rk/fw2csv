@@ -11,29 +11,127 @@ import argparse
 # without this, we may encounter fields larger than can be read
 csv.field_size_limit(sys.maxsize)
 
+
+class Cut(object):
+
+    def __init__(self, name=None, start=None, end=None, format=None):
+        self.name = name
+        self.start = start
+        self.end = end
+        self.format = format
+
+    def __repr__(self):
+        return "Cut(name={!r}, start={!r}, end={!r}, format={!r})".format(
+            self.name,
+            self.start,
+            self.end,
+            self.format,
+        )
+
+    def parse(self, value):
+
+        # consider the empty string to be null basically and attempt no further
+        # transformations
+        if value == "":
+            return value
+
+        if self.format is not None:
+
+            # signed overpunch
+            format_match = re.search(r'^s9[(](\d+)[)]v9[(](\d+)[)]$', self.format)
+            if format_match is not None:
+
+                decimals = int(format_match.groups()[1])
+
+                import overpunch
+                value = overpunch.extract(value, decimals=decimals)
+
+                value = "{}".format(value)
+
+            # implicit decimal point
+            format_match = re.search(r'^9[(](\d+)[)]v9[(](\d+)[)]$', self.format)
+            if format_match is not None:
+
+                decimals = int(format_match.groups()[1])
+                value = value[:-decimals] + "." + value[-decimals:]
+
+        return value
+
+
 class Converter(object):
 
     def __init__(self, cuts_path):
         self.cuts = []
         with open(cuts_path, "r") as cfp:
-            for line in cfp:
-                line = line.strip()
-                try:
-                    name, cut = re.split(r'\s+', line)
-                    self.cuts.append((name, int(cut)))
-                except TypeError:
-                    self.cuts.append((line, None))
-                except ValueError:
-                    self.cuts.append((line, None))
+
+            lines = list(cfp.readlines())
+
+            # magically detect if the cuts file is a csv or a text file
+            is_csv = True
+
+            for line in lines:
+                parts = line.split(",")
+                if len(parts) <= 1:
+                    is_csv = False
+
+            if is_csv:
+
+                name_key = None
+                end_key = None
+                format_key = None
+
+                cfp.seek(0)
+
+                reader = csv.DictReader(cfp)
+
+                for row in reader:
+                    if name_key is None:
+                        name_key = self._get_key_for_name(row, "name", ["name", "Field Name"])
+                    if end_key is None:
+                        end_key = self._get_key_for_name(row, "end", ["end", "End"])
+                    if format_key is None:
+                        format_key = self._get_key_for_name(row, "format", ["format", "Format"], missing_ok=True)
+
+                    name = row.get(name_key)
+                    end = int(row.get(end_key))
+                    format = row.get(format_key)
+
+                    cut = Cut(name=name, end=end, format=format)
+                    self.cuts.append(cut)
+
+            else:
+                for line in cfp:
+                    line = line.strip()
+
+                    try:
+                        name, cut = re.split(r'\s+', line)
+
+                        cut = Cut(name=name, end=end)
+                        self.cuts.append(cut)
+
+                    except TypeError:
+                        cut = Cut(name=line, end=None)
+                        self.cuts.append(cut)
+                    except ValueError:
+                        cut = Cut(name=line, end=None)
+                        self.cuts.append(cut)
+
+    def _get_key_for_name(self, row, name, options, missing_ok=False):
+        for option in options:
+            if option in row:
+                return option
+
+        if not missing_ok:
+            raise ValueError("Unable to determine key for '{}'".format(name))
 
     @property
     def fields(self):
-        return [v[0] for v in self.cuts]
+        return [v.name for v in self.cuts]
 
     def parse(self, fp):
         if fp == "-":
             fp = sys.stdin
-        elif isinstance(fp, basestring):
+        elif isinstance(fp, str):
             fp = open(fp, "r")
         elif isinstance(fp, int):
             fp = os.fdopen(fp, "r")
@@ -44,11 +142,18 @@ class Converter(object):
     def split(self, line):
         values = []
         start = 0
-        for _, end in self.cuts:
+        for cut in self.cuts:
+
+            end = cut.end
+
             if end is None:
-                values.append(line[start:].strip())
+                value = line[start:].strip()
             else:
-                values.append(line[start:end].strip())
+                value = line[start:end].strip()
+
+            value = cut.parse(value)
+            values.append(value)
+
             start = end
 
         return values
@@ -69,6 +174,7 @@ if __name__ == "__main__":
         args.files = ["-"]
 
     converter = Converter(args.cuts)
+
     writer = csv.writer(sys.stdout)
     writer.writerow(converter.fields)
     for file in args.files:
