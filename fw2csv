@@ -38,10 +38,13 @@ class Cut(object):
         if self.format is not None:
 
             # signed overpunch
-            format_match = re.search(r'^s9[(](\d+)[)]v9[(](\d+)[)]$', self.format)
+            format_match = re.search(r'^s9[(](\d+)[)](v9[(](\d+)[)])?$', self.format)
             if format_match is not None:
 
-                decimals = int(format_match.groups()[1])
+                if format_match.groups()[1] is None:
+                    decimals = 0
+                else:
+                    decimals = int(format_match.groups()[2])
 
                 import overpunch
                 value = overpunch.extract(value, decimals=decimals)
