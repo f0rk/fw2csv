@@ -95,9 +95,9 @@ class Converter(object):
                     line = line.strip()
 
                     try:
-                        name, cut = re.split(r'\s+', line)
+                        name, end = re.split(r'\s+', line)
 
-                        cut = Cut(name=name, end=end)
+                        cut = Cut(name=name, end=int(end))
                         self.cuts.append(cut)
 
                     except TypeError:
