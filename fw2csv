@@ -84,11 +84,46 @@ class Converter(object):
 
                 for row in reader:
                     if name_key is None:
-                        name_key = self._get_key_for_name(row, "name", ["name", "Field Name"])
+
+                        name_options = [
+                            "name",
+                            "Field Name",
+                        ]
+
+                        name_key = self._get_key_for_name(
+                            row,
+                            "name",
+                            name_options,
+                        )
+
                     if end_key is None:
-                        end_key = self._get_key_for_name(row, "end", ["end", "End"])
+
+                        end_options = [
+                            "end",
+                            "End",
+                            "To POS",
+                        ]
+
+                        end_key = self._get_key_for_name(
+                            row,
+                            "end",
+                            end_options,
+                        )
+
                     if format_key is None:
-                        format_key = self._get_key_for_name(row, "format", ["format", "Format"], missing_ok=True)
+
+                        format_options = [
+                            "format",
+                            "Format",
+                            "Field Type",
+                        ]
+
+                        format_key = self._get_key_for_name(
+                            row,
+                            "format",
+                            format_options,
+                            missing_ok=True,
+                        )
 
                     name = row.get(name_key)
                     end = int(row.get(end_key))
