@@ -12,6 +12,33 @@ import argparse
 csv.field_size_limit(sys.maxsize)
 
 
+class XLSXReader(object):
+
+    headers = None
+
+    def __init__(self, fileobj):
+        from openpyxl import load_workbook
+        self.wb = load_workbook(fileobj, read_only=True, data_only=True)
+        self.ws = self.wb.active
+
+    def __iter__(self):
+
+        for row in self.ws.rows:
+
+            if self.headers is None:
+                self.headers = []
+                for cell in row:
+                    self.headers.append(cell.value)
+                continue
+
+            values = [c.value for c in row]
+            values = values[:len(self.headers)]
+            while len(values) < len(self.headers):
+                values.append(None)
+
+            yield dict(zip(self.headers, values))
+
+
 class Cut(object):
 
     def __init__(self, name=None, start=None, end=None, format=None):
@@ -72,82 +99,85 @@ class Converter(object):
 
     def __init__(self, cuts_path):
         self.cuts = []
-        with open(cuts_path, "r") as cfp:
 
+        if cuts_path.endswith(".csv") or cuts_path.endswith(".xlsx"):
             if cuts_path.endswith(".csv"):
-
-                name_key = None
-                end_key = None
-                format_key = None
-
+                cfp = open(cuts_path, "r")
                 reader = csv.DictReader(cfp)
+            elif cuts_path.endswith(".xlsx"):
+                cfp = open(cuts_path, "rb")
+                reader = XLSXReader(cfp)
 
-                for row in reader:
-                    if name_key is None:
+            name_key = None
+            end_key = None
+            format_key = None
 
-                        name_options = [
-                            "name",
-                            "Field Name",
-                        ]
+            for row in reader:
+                if name_key is None:
 
-                        name_key = self._get_key_for_name(
-                            row,
-                            "name",
-                            name_options,
-                        )
+                    name_options = [
+                        "name",
+                        "Field Name",
+                    ]
 
-                    if end_key is None:
+                    name_key = self._get_key_for_name(
+                        row,
+                        "name",
+                        name_options,
+                    )
 
-                        end_options = [
-                            "end",
-                            "End",
-                            "To POS",
-                        ]
+                if end_key is None:
 
-                        end_key = self._get_key_for_name(
-                            row,
-                            "end",
-                            end_options,
-                        )
+                    end_options = [
+                        "end",
+                        "End",
+                        "To POS",
+                    ]
 
-                    if format_key is None:
+                    end_key = self._get_key_for_name(
+                        row,
+                        "end",
+                        end_options,
+                    )
 
-                        format_options = [
-                            "format",
-                            "Format",
-                            "Field Type",
-                        ]
+                if format_key is None:
 
-                        format_key = self._get_key_for_name(
-                            row,
-                            "format",
-                            format_options,
-                            missing_ok=True,
-                        )
+                    format_options = [
+                        "format",
+                        "Format",
+                        "Field Type",
+                    ]
 
-                    name = row.get(name_key)
-                    end = int(row.get(end_key))
-                    format = row.get(format_key)
+                    format_key = self._get_key_for_name(
+                        row,
+                        "format",
+                        format_options,
+                        missing_ok=True,
+                    )
 
-                    cut = Cut(name=name, end=end, format=format)
+                name = row.get(name_key)
+                end = int(row.get(end_key))
+                format = row.get(format_key)
+
+                cut = Cut(name=name, end=end, format=format)
+                self.cuts.append(cut)
+
+        else:
+            for line in cfp:
+                line = line.strip()
+
+                try:
+                    name, end = re.split(r'\s+', line)
+
+                    cut = Cut(name=name, end=int(end))
                     self.cuts.append(cut)
 
-            else:
-                for line in cfp:
-                    line = line.strip()
-
-                    try:
-                        name, end = re.split(r'\s+', line)
-
-                        cut = Cut(name=name, end=int(end))
-                        self.cuts.append(cut)
-
-                    except TypeError:
-                        cut = Cut(name=line, end=None)
-                        self.cuts.append(cut)
-                    except ValueError:
-                        cut = Cut(name=line, end=None)
-                        self.cuts.append(cut)
+                except TypeError:
+                    cut = Cut(name=line, end=None)
+                    self.cuts.append(cut)
+                except ValueError:
+                    cut = Cut(name=line, end=None)
+                    self.cuts.append(cut)
 
     def _get_key_for_name(self, row, name, options, missing_ok=False):
         for option in options:
