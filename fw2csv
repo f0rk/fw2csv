@@ -58,6 +58,13 @@ class Cut(object):
                 decimals = int(format_match.groups()[1])
                 value = value[:-decimals] + "." + value[-decimals:]
 
+            # a different implied decimal point format
+            format_match = re.search(r'^N\s?[(](\d+).(\d+)[)]$', self.format)
+            if format_match is not None:
+
+                decimals = int(format_match.groups()[1])
+                value = value[:-decimals] + "." + value[-decimals:]
+
         return value
 
 
