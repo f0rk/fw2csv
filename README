@@ -24,6 +24,9 @@ bar,8,
 herp,12,
 derp,s9(4)v9(4)
 
+Excel files with the .xlsx extension are accepted as well and work the same way
+as CSV files. openpyxl must be installed for this to work.
+
 The general format for signed overpunch is s9(\d+)v9(\d+) and for implicit
 decimal points is 9(\d+)v9(\d+). All other data is passed through as is.
 
