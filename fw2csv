@@ -132,6 +132,7 @@ class Converter(object):
                         "end",
                         "End",
                         "To POS",
+                        "Field Location To",
                     ]
 
                     end_key = self._get_key_for_name(
@@ -146,6 +147,7 @@ class Converter(object):
                         "format",
                         "Format",
                         "Field Type",
+                        "Field Format",
                     ]
 
                     format_key = self._get_key_for_name(
