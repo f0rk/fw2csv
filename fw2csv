@@ -170,6 +170,8 @@ class Converter(object):
                 self.cuts.append(cut)
 
         else:
+            cfp = open(cuts_path, "r")
+
             for line in cfp:
                 line = line.strip()
 
