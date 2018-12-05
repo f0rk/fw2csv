@@ -146,6 +146,7 @@ class Converter(object):
                     format_options = [
                         "format",
                         "Format",
+                        "Type",
                         "Field Type",
                         "Field Format",
                     ]
