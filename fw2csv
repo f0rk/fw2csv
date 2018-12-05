@@ -159,6 +159,10 @@ class Converter(object):
                     )
 
                 name = row.get(name_key)
+
+                if not name:
+                    continue
+
                 end = int(row.get(end_key))
                 format = row.get(format_key)
 
