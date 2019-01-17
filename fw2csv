@@ -135,6 +135,11 @@ class Cut(object):
                 if format_specifier in ("CCYYMMDD", "YYYYMMDD"):
                     return value
 
+                # all-zero date values for null are common, return the empty
+                # string for them
+                if re.search(r'^0+$', value):
+                    return ""
+
                 if format_specifier == "CCYYDDD":
                     format_specifier = "%Y%j"
                 elif format_specifier == "YYYYDDD":
