@@ -144,16 +144,16 @@ class Cut(object):
                 elif format_specifier == "YYDDD":
                     format_specifier = "%y%j"
                 elif format_specifier == "MMDDYYYY":
-                    format_specifier = "%M%D%Y"
+                    format_specifier = "%m%d%Y"
                 elif format_specifier == "MMDDYY":
-                    format_specifier = "%M%D%y"
+                    format_specifier = "%m%d%y"
                 elif format_specifier == "MMDDYY":
-                    format_specifier = "%M%D%y"
+                    format_specifier = "%m%d%y"
 
                 # unknown format? hopefully it is strptime compatible
 
                 value = datetime.strptime(value, format_specifier)
-                value = "{:%Y%M%D}".format(value)
+                value = "{:%Y%m%d}".format(value)
                 return value
 
         return value
