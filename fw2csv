@@ -161,7 +161,11 @@ class Cut(object):
 
 class Converter(object):
 
-    def __init__(self, cuts_path):
+    def __init__(self, cuts_path, name_overrides=None):
+
+        if name_overrides is None:
+            name_overrides = []
+
         self.cuts = []
 
         if cuts_path.endswith(".csv") or cuts_path.endswith(".xlsx"):
@@ -175,6 +179,20 @@ class Converter(object):
             name_key = None
             end_key = None
             format_key = None
+
+            for field, field_name in name_overrides:
+                if field == "name":
+                    name_key = field_name
+                elif field == "end":
+                    end_key = field_name
+                elif field == "format":
+                    format_key = field_name
+                else:
+                    raise ValueError(
+                        "Unable to handle field name override {!r} (must be "
+                        "one of 'name', 'end', or 'format')"
+                        .format(field)
+                    )
 
             for row in reader:
                 if name_key is None:
@@ -313,13 +331,42 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("cuts", help="path to the cuts file")
     parser.add_argument("files", nargs="*", help="files to process")
+    parser.add_argument(
+        "--override",
+        dest="overrides",
+        action="append",
+        nargs=1,
+        metavar=("field=N",),
+        help=(
+            "manual field name specifications to override defaults. use "
+            "--override 'name=The Name' to specify"
+        ),
+    )
 
     args = parser.parse_args()
 
     if not args.files:
         args.files = ["-"]
 
-    converter = Converter(args.cuts)
+    name_overrides = []
+    for raw_override in args.overrides:
+
+        override = raw_override[0]
+
+        match = re.search(r'^(name|end|format)=(.+)$', override)
+
+        if match is None:
+            sys.stderr.write(
+                "override {!r} is not valid. specify one of name, end, or "
+                "format followed by an equal sign and the corresponding header "
+                "name in the csv or excel cuts specification.\n"
+                .format(override)
+            )
+            sys.exit(1)
+
+        name_overrides.append((match.groups()[0], match.groups()[1]))
+
+    converter = Converter(args.cuts, name_overrides=name_overrides)
 
     writer = csv.writer(sys.stdout)
     writer.writerow(converter.fields)
