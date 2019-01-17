@@ -197,6 +197,7 @@ class Converter(object):
                         "End",
                         "To POS",
                         "Field Location To",
+                        "Positions",
                     ]
 
                     end_key = self._get_key_for_name(
@@ -227,7 +228,16 @@ class Converter(object):
                 if not name:
                     continue
 
-                end = int(row.get(end_key))
+                raw_end = row.get(end_key)
+                if raw_end is not None:
+                    raw_end = str(raw_end)
+
+                # allow position to be specified with a range
+                if raw_end is not None:
+                    if "-" in raw_end:
+                        _, raw_end = raw_end.split("-")
+
+                end = int(raw_end)
                 format = row.get(format_key)
 
                 cut = Cut(name=name, end=end, format=format)
