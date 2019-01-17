@@ -80,12 +80,38 @@ class Cut(object):
                 value = "{}".format(value)
                 return value
 
+            # signed overpunch v2
+            format_match = re.search(r'^s9[(](\d+)[)]v(9+)$', self.format, flags=re.I)
+            if format_match is not None:
+
+                decimals = len(format_match.groups()[1])
+
+                import overpunch
+                value = overpunch.extract(value, decimals=decimals)
+
+                value = "{}".format(value)
+                return value
+
             # implicit decimal point
-            format_match = re.search(r'^9[(](\d+)[)]v9[(](\d+)[)]$', self.format)
+            format_match = re.search(r'^9[(](\d+)[)]v9[(](\d+)[)]$', self.format, flags=re.I)
             if format_match is not None:
 
                 decimals = int(format_match.groups()[1])
-                value = value[:-decimals] + "." + value[-decimals:]
+                if decimals == 0:
+                    value = value.lstrip("0") or "0"
+                else:
+                    value = (value[:-decimals].lstrip("0") or "0") + "." + value[-decimals:]
+                return value
+
+            # implicit decimal point v2
+            format_match = re.search(r'^9[(](\d+)[)]v(9+)$', self.format, flags=re.I)
+            if format_match is not None:
+
+                decimals = len(format_match.groups()[1])
+                if decimals == 0:
+                    value = value.lstrip("0") or "0"
+                else:
+                    value = (value[:-decimals].lstrip("0") or "0") + "." + value[-decimals:]
                 return value
 
             # a different implied decimal point format
@@ -93,7 +119,10 @@ class Cut(object):
             if format_match is not None:
 
                 decimals = int(format_match.groups()[1])
-                value = value[:-decimals] + "." + value[-decimals:]
+                if decimals == 0:
+                    value = value.lstrip("0") or "0"
+                else:
+                    value = (value[:-decimals].lstrip("0") or "0") + "." + value[-decimals:]
                 return value
 
             # date handling, format is strptime, output is YYYYMMDD
