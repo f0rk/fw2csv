@@ -354,22 +354,23 @@ if __name__ == "__main__":
         args.files = ["-"]
 
     name_overrides = []
-    for raw_override in args.overrides:
+    if args.overrides:
+        for raw_override in args.overrides:
 
-        override = raw_override[0]
+            override = raw_override[0]
 
-        match = re.search(r'^(name|end|format)=(.+)$', override)
+            match = re.search(r'^(name|end|format)=(.+)$', override)
 
-        if match is None:
-            sys.stderr.write(
-                "override {!r} is not valid. specify one of name, end, or "
-                "format followed by an equal sign and the corresponding header "
-                "name in the csv or excel cuts specification.\n"
-                .format(override)
-            )
-            sys.exit(1)
+            if match is None:
+                sys.stderr.write(
+                    "override {!r} is not valid. specify one of name, end, or "
+                    "format followed by an equal sign and the corresponding "
+                    "header name in the csv or excel cuts specification.\n"
+                    .format(override)
+                )
+                sys.exit(1)
 
-        name_overrides.append((match.groups()[0], match.groups()[1]))
+            name_overrides.append((match.groups()[0], match.groups()[1]))
 
     converter = Converter(args.cuts, name_overrides=name_overrides)
 
