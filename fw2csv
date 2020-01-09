@@ -126,10 +126,11 @@ class Cut(object):
                 return value
 
             # date handling, format is strptime, output is YYYYMMDD
-            format_match = re.search(r'^D[(](.+)[)]$', self.format)
+            format_match = re.search(r'^D([BE])?[(](.+)[)]$', self.format)
             if format_match is not None:
 
-                format_specifier = format_match.groups()[0]
+                two_digit_year_handling = format_match.groups()[0]
+                format_specifier = format_match.groups()[1]
 
                 # nothing to do here, everything is already in the right format
                 if format_specifier in ("CCYYMMDD", "YYYYMMDD"):
@@ -152,12 +153,42 @@ class Cut(object):
                     format_specifier = "%m%d%Y"
                 elif format_specifier == "MMDDYY":
                     format_specifier = "%m%d%y"
-                elif format_specifier == "MMDDYY":
-                    format_specifier = "%m%d%y"
 
                 # unknown format? hopefully it is strptime compatible
 
                 value = datetime.strptime(value, format_specifier)
+
+                if format_specifier in ("%m%d%y", "%y%j"):
+
+                    def two_digit_year_fixer(v, cutoff):
+
+                        if v > cutoff:
+                            string_year = str(v.year)
+                            first_two = string_year[:2]
+                            last_digits = string_year[2:]
+                            new_first_two = str(int(first_two) - 1)
+                            new_year = int(new_first_two + last_digits)
+
+                            v = datetime(new_year, v.month, v.day)
+
+                        return v
+
+                    if two_digit_year_handling == "B":
+
+                        # B = this is a date of birth or similar, and therefore
+                        # must be in the past
+                        value = two_digit_year_fixer(value, datetime.now())
+
+                    elif two_digit_year_handling == "E":
+
+                        # E = use default excel behavior, with pivot year 2029
+                        value = two_digit_year_fixer(value, datetime(2029, 12, 31))
+
+                    else:
+                        # only B and E are possible, default behavior is to use
+                        # POSIX standard behavior
+                        pass
+
                 value = "{:%Y%m%d}".format(value)
                 return value
 
