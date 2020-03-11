@@ -378,11 +378,41 @@ if __name__ == "__main__":
             "--override 'name=The Name' to specify"
         ),
     )
+    parser.add_argument(
+        "--in-place",
+        action="store_true",
+        help=(
+            "instead of sending output to stdout, create a new file with the "
+            "same name as the input file, replacing the extension with .csv. "
+            "only works when exactly 1 filename is provided."
+        )
+    )
 
     args = parser.parse_args()
 
     if not args.files:
         args.files = ["-"]
+
+    if args.in_place:
+        if len(args.files) != 1:
+            sys.stderr.write("--in-place only works with 1 file\n")
+            sys.exit(1)
+        if args.files == ["-"]:
+            sys.stderr.write("--in-place only works with an on-disk file\n")
+            sys.exit(1)
+
+        filename = args.files[0]
+        filename_without_ext, _ = os.path.splitext(filename)
+        output_filename = filename_without_ext + ".csv"
+
+        if filename == output_filename:
+            sys.stderr.write("input file already a csv!\n")
+            sys.exit(1)
+
+        output = open(output_filename, "wt")
+
+    else:
+        output = sys.stdout
 
     name_overrides = []
     if args.overrides:
@@ -405,7 +435,7 @@ if __name__ == "__main__":
 
     converter = Converter(args.cuts, name_overrides=name_overrides)
 
-    writer = csv.writer(sys.stdout)
+    writer = csv.writer(output)
     writer.writerow(converter.fields)
     for file in args.files:
         for rec in converter.parse(file):
